@@ -1,4 +1,4 @@
--- Srinks and normalises all envelops on selected geometry
+-- Shrinks and normalizes all envelops on selected geometry
 
 -- Config these as needed
 global offsetEnvelopStart = [0,0.01,0]
@@ -46,7 +46,7 @@ fn getBoneFromSkin theSkin boneID=
 	)
 )
 
-echo "KILL ENVELOP SCRIPT START"
+echo "SHRINK ENVELOP SCRIPT START"
 
  for obj in selection do
  (
@@ -106,4 +106,4 @@ echo "KILL ENVELOP SCRIPT START"
 	echo ("Done Geo" + (obj.name as string))
 )
 
-echo "KILL ENVELOP SCRIPT DONE"
+echo "SHRINK ENVELOP SCRIPT DONE"
