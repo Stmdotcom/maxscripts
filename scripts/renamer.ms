@@ -25,11 +25,11 @@
 	)
 
 
-	local objs  = Execute("$" + duplicateStopper + "* as array")
+	local renamedNodes  = Execute("$" + duplicateStopper + "* as array")
 	
-	for obj in objs do (
-		obj.name = trimLeft obj.name duplicateStopper as string
+	for renamedNode in renamedNodes do (
+		renamedNode.name = trimLeft renamedNode.name duplicateStopper as string
 
-		echo ("Trimmed off " + (duplicateStopper as string) + " Now " + (obj.name as string))
+		echo ("Trimmed off " + (duplicateStopper as string) + " Now " + (renamedNode.name as string))
 	)
 )
