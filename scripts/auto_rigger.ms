@@ -5,15 +5,15 @@ fn echo msg =
 	format "%\n" (msg) to:listener
 )
 
-fn getCurrentIkName =
-(
-	return "IK Chain00" + (ikCount as string)
-)
-
 fn addIkLimbChain parent child =
 (
-	ikCount = ikCount + 1;
-	IKSys.ikChain parent child "IKLimb"
+	local IkHandle = IKSys.ikChain parent child "IKLimb"
+	if IkHandle == undefined then (
+		local exceptionMessage = "Could not create IK between nodes " + parent.name + " and " + child.name
+		throw exceptionMessage
+	)
+
+	return IkHandle
 )
 
 fn safeGetNodeByName nodeName =
@@ -28,14 +28,15 @@ fn safeGetNodeByName nodeName =
 	return workingNode
 )
 
-fn addLegRig legNodeNames =
+fn addLegRig legNodeNames legType =
 (
 	-- Get parent and child IK nodes
 	local thigh = safeGetNodeByName legNodeNames[1]
-	local ankle = safeGetNodeByName legNodeNames[2]
+	local knee = safeGetNodeByName legNodeNames[2]
+	local ankle = safeGetNodeByName legNodeNames[3]
 
 	-- Add IK for leg
-	addIkLimbChain thigh ankle
+	local legIkChain = addIkLimbChain thigh ankle
 
 	-- Create foot handle
 	local legHelper = torus()
@@ -47,26 +48,36 @@ fn addLegRig legNodeNames =
 
 	-- Rotate foot to handle
 	orientation = Orientation_Constraint()
-	ankle.rotation.controller.available.controller = orientation
+	ankle.rotation.controller = orientation
 	orientation.appendtarget legHelper 100
 	orientation.relative = true
 
 	-- Move foot to handle
 	position = Position_Constraint()
-	local ikname = getCurrentIkName()
-	legIkChain = getNodeByName ikname
+	legIkChain.name = ("IK_Leg_" + legType)
 	legIkChain.pos.controller = position
 	position.appendtarget legHelper 100
+
+	-- Create Ik pivot
+	local legIkTarget = sphere()
+	legIkTarget.radius = (2 * helperMultiplier)
+	legIkTarget.pos.x = knee.pos.x + (20 * helperMultiplier)
+	legIkTarget.pos.y = knee.pos.y
+	legIkTarget.pos.z = knee.pos.z
+	legIkTarget.name = ("Helper_Leg_" + legType)
+
+	legIkChain.transform.controller.VHTarget = legIkTarget
 )
 
 fn addArmRig armNodeNames armType =
 (
 	-- Get parent and child IK nodes
 	local shoulder = safeGetNodeByName armNodeNames[1]
-	local wrist = safeGetNodeByName armNodeNames[2]
+	local elbow = safeGetNodeByName armNodeNames[2]
+	local wrist = safeGetNodeByName armNodeNames[3]
 
 	-- Add IK for arm
-	addIkLimbChain shoulder wrist
+	local armIkChain = addIkLimbChain shoulder wrist
 
 	-- Create wrist handle
 	local armHelper = torus()
@@ -85,16 +96,25 @@ fn addArmRig armNodeNames armType =
 
 	-- Rotate foot to handle
 	orientation = Orientation_Constraint()
-	wrist.rotation.controller.available.controller = orientation
+	wrist.rotation.controller = orientation
 	orientation.appendtarget armHelper 100
 	orientation.relative = true
 
 	-- Move foot to handle
 	position = Position_Constraint()
-	local ikname = getCurrentIkName()
-	armIkChain = getNodeByName ikname
+	armIkChain.name = ("IK_Arm_" + armType)
 	armIkChain.pos.controller = position
 	position.appendtarget armHelper 100
+
+	-- Create Ik pivot
+	local armIkTarget = sphere()
+	armIkTarget.radius = (2 * helperMultiplier)
+	armIkTarget.pos.x = elbow.pos.x - (20 * helperMultiplier)
+	armIkTarget.pos.y = elbow.pos.y
+	armIkTarget.pos.z = elbow.pos.z
+	armIkTarget.name = ("Helper_Arm_" + armType)
+
+	armIkChain.transform.controller.VHTarget = armIkTarget
 )
 
 (
@@ -103,26 +123,19 @@ fn addArmRig armNodeNames armType =
 	-- helperWristOffset can be set to change the angle of the wrist helper depending on arm angle from t-pose
 	global helperWristOffset = 10
 
-	-- Internal use
-	global ikCount = 0
+	-- Leg nodes (Upper thigh, knee, to ankle)
+	local leftLegNodes = #("Left_Hip", "Left_Knee", "Left_Foot")
+	local rightLegNodes = #("Right_Hip", "Right_Knee", "Right_Foot")
 
-	-- Leg nodes (Upper thigh, to ankle)
-	local leftLegNodes = #("Left_Hip", "Right_Foot")
-	local rightLegNodes = #("Right_Hip", "Right_Foot")
-	--local leftLegNodes = #("HM_Hip_Left_Jnt", "HM_Belly004_Jnt")
-	--local rightLegNodes = #("HM_Hip_Right_Jnt", "HM_Foot_Left002_Jnt")
-
-	-- Arm nodes (Shoulder, to wrist)
-	local leftArmNodes = #("Left_Shoulder", "Left_Wrist")
-	local rightArmNodes = #("Right_Shoulder", "Right_Wrist")
-	--local leftArmNodes = #("HM_Arm_Left_Jnt", "HM_Wrist_Left_Jnt")
-	--local rightArmNodes = #("HM_Arm_Right_Jnt", "HM_Wrist_Right_Jnt")
+	-- Arm nodes (Shoulder, elbow, to wrist)
+	local leftArmNodes = #("Left_Shoulder", "Left_Elbow", "Left_Wrist")
+	local rightArmNodes = #("Right_Shoulder", "Right_Elbow", "Right_Wrist")
 
 	echo "Rigging Left Leg"
-	addLegRig leftLegNodes
+	addLegRig leftLegNodes "left"
 
 	echo "Rigging Right Leg"
-	addLegRig rightLegNodes
+	addLegRig rightLegNodes "right"
 
 	echo "Rigging Left Arm"
 	addArmRig leftArmNodes "left"
