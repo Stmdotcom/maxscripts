@@ -117,6 +117,51 @@ fn addArmRig armNodeNames armType =
 	armIkChain.transform.controller.VHTarget = armIkTarget
 )
 
+fn addEyeRig eyeNodeNames =
+(
+	local eyeLeft = safeGetNodeByName eyeNodeNames[1]
+	local eyeRight = safeGetNodeByName eyeNodeNames[2]
+	local head = safeGetNodeByName eyeNodeNames[3]
+
+	local eyeTarget = sphere()
+	eyeTarget.radius = (.2 * helperMultiplier)
+	eyeTarget.pos.z = eyeLeft.pos.z
+	eyeTarget.pos.x = (30 + helperMultiplier)
+
+	-- Position eye targets
+	local eyeLeftTarget = torus()
+	eyeLeftTarget.radius1 = (1 * helperMultiplier)
+	eyeLeftTarget.radius2 = (.1 * helperMultiplier)
+	eyeLeftTarget.rotation = eulerAngles 0 90 0
+	eyeLeftTarget.pos.x = (30 + helperMultiplier)
+	eyeLeftTarget.pos.z = eyeLeft.pos.z
+	eyeLeftTarget.pos.y = eyeLeft.pos.y
+
+	local eyeRightTarget = torus()
+	eyeRightTarget.radius1 = (1 * helperMultiplier)
+	eyeRightTarget.radius2 = (.1 * helperMultiplier)
+	eyeRightTarget.rotation = eulerAngles 0 90 0
+	eyeRightTarget.pos.x = (30 + helperMultiplier)
+	eyeRightTarget.pos.z = eyeRight.pos.z
+	eyeRightTarget.pos.y = eyeRight.pos.y
+
+	-- make eye targets follow head
+	eyeRightTarget.parent = eyeTarget
+	eyeLeftTarget.parent = eyeTarget
+	eyeTarget.parent = head
+
+	-- Make eyes follow eye targets
+	lookOrientationEyeRight = LookAt_Constraint()
+	lookOrientationEyeRight.appendtarget eyeRightTarget 100
+	eyeRight.rotation.controller = lookOrientationEyeRight
+	lookOrientationEyeRight.relative = true
+
+	lookOrientationEyeLeft = LookAt_Constraint()
+	lookOrientationEyeLeft.appendtarget eyeLeftTarget 100
+	eyeLeft.rotation.controller = lookOrientationEyeLeft
+	lookOrientationEyeLeft.relative = true
+)
+
 (
 	-- helperMultiplier can be set to shrink or grow size of the rig helpers
 	global helperMultiplier = 1
@@ -131,6 +176,9 @@ fn addArmRig armNodeNames armType =
 	local leftArmNodes = #("Left_Shoulder", "Left_Elbow", "Left_Wrist")
 	local rightArmNodes = #("Right_Shoulder", "Right_Elbow", "Right_Wrist")
 
+	-- Eye nodes (left eye, right eye, head)
+	local eyeNodes = #("Eye_Left", "Eye_Right", "Head")
+
 	echo "Rigging Left Leg"
 	addLegRig leftLegNodes "left"
 
@@ -142,4 +190,7 @@ fn addArmRig armNodeNames armType =
 
 	echo "Rigging Right Arm"
 	addArmRig rightArmNodes "right"
+
+	echo "Rigging Eyes"
+	addEyeRig eyeNodes
 )
